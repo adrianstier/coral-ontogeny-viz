@@ -1,8 +1,10 @@
 # Product Requirements Document: Coral Ontogeny Visualization System
 
+**Visualizing Hunter Lenihan's Time Series Work**
+
 ## Overview
 
-An interactive visualization platform for exploring coral demographic data from Mo'orea LTER back reef transects. The system tracks individual coral colonies of four genera (Pocillopora, Acropora, Porites, Millepora) through time, visualizing recruitment, growth, shrinkage, fission, fusion, and mortality events.
+An interactive visualization platform for **Hunter Lenihan's long-term coral demographic time series** from Mo'orea LTER back reef transects. The system transforms 11 years of monitoring data into engaging **1D temporal visualizations** (population dynamics, survival curves, growth rates) and **2D spatial-temporal visualizations** (colony positions and fates animated through time). Track individual coral colonies of four genera (Pocillopora, Acropora, Porites, Millepora) through time, visualizing recruitment, growth, shrinkage, fission, fusion, and mortality events.
 
 ## Data Structure
 

@@ -1,0 +1,339 @@
+---
+title: "Coral Ontogeny Data Exploration"
+author: "MCR LTER Analysis"
+date: "`r Sys.Date()`"
+output:
+  html_document:
+    toc: true
+    toc_float: true
+    code_folding: show
+    theme: flatly
+    df_print: paged
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  echo = TRUE,
+  warning = FALSE,
+  message = FALSE,
+  fig.width = 10,
+  fig.height = 6,
+  dpi = 300
+)
+
+library(here)
+library(tidyverse)
+library(readxl)
+library(janitor)
+library(knitr)
+library(patchwork)
+
+# Source utility functions
+source(here("scripts/R/utils.R"))
+```
+
+# Overview
+
+This notebook performs initial exploratory data analysis (EDA) on the MCR LTER Back Reef coral monitoring dataset (2013-2024).
+
+**Objectives:**
+
+1. Load and validate raw Excel data
+2. Check data quality and completeness
+3. Generate summary statistics
+4. Create initial visualizations
+5. Identify data issues and patterns
+
+---
+
+# 1. Data Loading
+
+```{r load-data}
+# Load raw Excel file
+raw_data_path <- here("data/raw/LTER_1_Back_Reef_Transects_1-2_2013-2024.xlsx")
+
+# Read Excel file
+coral_raw <- read_excel(raw_data_path)
+
+# Display structure
+cat("Dataset dimensions:", nrow(coral_raw), "rows ×", ncol(coral_raw), "columns\n")
+glimpse(coral_raw)
+```
+
+---
+
+# 2. Schema Validation
+
+```{r schema-validation}
+# Expected metadata columns
+expected_metadata <- c("Coral ID", "Transect", "Genus", "X", "Y", "Z")
+
+# Check for required columns
+metadata_present <- expected_metadata %in% names(coral_raw)
+names(metadata_present) <- expected_metadata
+
+# Validation results
+validation_results <- tibble(
+  Column = expected_metadata,
+  Present = metadata_present,
+  Status = ifelse(metadata_present, "✓", "✗")
+)
+
+kable(validation_results, caption = "Metadata Column Validation")
+
+# Check year blocks (2013-2023)
+years <- 2013:2023
+year_columns <- map(years, ~paste0(c("Diam1_", "Diam2_", "Height_", "Observer_",
+                                       "Status_", "Growth Ratio_", "Fate_", "Notes_"), .x))
+
+year_presence <- map_lgl(year_columns, ~all(.x %in% names(coral_raw)))
+names(year_presence) <- years
+
+cat("\nYear blocks present:\n")
+print(year_presence)
+```
+
+---
+
+# 3. Data Quality Checks
+
+## 3.1 Missing Data Patterns
+
+```{r missing-data}
+# Count missing values by column type
+metadata_cols <- names(coral_raw)[1:8]
+missing_summary <- coral_raw %>%
+  summarise(across(all_of(metadata_cols), ~sum(is.na(.)))) %>%
+  pivot_longer(everything(), names_to = "Column", values_to = "Missing_Count") %>%
+  mutate(Percent_Missing = round(Missing_Count / nrow(coral_raw) * 100, 2)) %>%
+  arrange(desc(Missing_Count))
+
+kable(missing_summary, caption = "Missing Data in Metadata Columns")
+
+# Visualize missing data
+ggplot(missing_summary, aes(x = reorder(Column, Missing_Count), y = Missing_Count)) +
+  geom_col(fill = "steelblue") +
+  geom_text(aes(label = paste0(Percent_Missing, "%")), hjust = -0.1) +
+  coord_flip() +
+  labs(title = "Missing Data by Column",
+       x = "Column", y = "Count of Missing Values") +
+  theme_minimal()
+```
+
+## 3.2 Genus Distribution
+
+```{r genus-distribution}
+genus_counts <- coral_raw %>%
+  count(Genus, sort = TRUE) %>%
+  mutate(Percent = round(n / sum(n) * 100, 1))
+
+kable(genus_counts, caption = "Colony Count by Genus")
+
+# Visualization
+ggplot(genus_counts, aes(x = reorder(Genus, n), y = n, fill = Genus)) +
+  geom_col() +
+  geom_text(aes(label = paste0(n, " (", Percent, "%)")), hjust = -0.1) +
+  coord_flip() +
+  scale_fill_brewer(palette = "Set2") +
+  labs(title = "Coral Colony Distribution by Genus",
+       x = "Genus", y = "Number of Colonies") +
+  theme_minimal() +
+  theme(legend.position = "none")
+```
+
+## 3.3 Transect Coverage
+
+```{r transect-coverage}
+transect_summary <- coral_raw %>%
+  count(Transect, Genus) %>%
+  pivot_wider(names_from = Genus, values_from = n, values_fill = 0)
+
+kable(transect_summary, caption = "Colony Count by Transect and Genus")
+```
+
+## 3.4 Spatial Distribution
+
+```{r spatial-distribution}
+# Check spatial coordinate ranges
+spatial_summary <- coral_raw %>%
+  summarise(
+    X_min = min(X, na.rm = TRUE),
+    X_max = max(X, na.rm = TRUE),
+    Y_min = min(Y, na.rm = TRUE),
+    Y_max = max(Y, na.rm = TRUE),
+    Z_min = min(Z, na.rm = TRUE),
+    Z_max = max(Z, na.rm = TRUE)
+  )
+
+kable(spatial_summary, caption = "Spatial Coordinate Ranges")
+
+# Plot spatial positions
+ggplot(coral_raw, aes(x = X, y = Y, color = Genus, shape = Transect)) +
+  geom_point(size = 2, alpha = 0.6) +
+  facet_wrap(~Transect, ncol = 2) +
+  scale_color_brewer(palette = "Set1") +
+  labs(title = "Coral Colony Spatial Positions",
+       x = "X Position (m)", y = "Y Position (m)") +
+  theme_minimal() +
+  coord_fixed()
+```
+
+---
+
+# 4. Temporal Coverage Analysis
+
+```{r temporal-coverage}
+# Extract measurement data for each year
+# This requires parsing the year-specific columns
+# For now, we'll check column name patterns
+
+year_cols_2013 <- grep("_2013$", names(coral_raw), value = TRUE)
+year_cols_2023 <- grep("_2023$", names(coral_raw), value = TRUE)
+
+cat("Columns for 2013:", length(year_cols_2013), "\n")
+cat("Columns for 2023:", length(year_cols_2023), "\n")
+
+cat("\nExample 2013 columns:\n")
+print(head(year_cols_2013))
+```
+
+---
+
+# 5. Size Measurements
+
+```{r size-measurements}
+# Extract diameter and height measurements for initial year (2013)
+# Check measurement ranges for biological plausibility
+
+# Note: Column names may vary - adjust based on actual Excel structure
+diam1_2013 <- coral_raw$`Diam1_2013`
+diam2_2013 <- coral_raw$`Diam2_2013`
+height_2013 <- coral_raw$`Height_2013`
+
+if (!is.null(diam1_2013)) {
+  size_summary_2013 <- tibble(
+    Measurement = c("Diameter 1", "Diameter 2", "Height"),
+    Min = c(min(diam1_2013, na.rm = TRUE),
+            min(diam2_2013, na.rm = TRUE),
+            min(height_2013, na.rm = TRUE)),
+    Median = c(median(diam1_2013, na.rm = TRUE),
+               median(diam2_2013, na.rm = TRUE),
+               median(height_2013, na.rm = TRUE)),
+    Mean = c(mean(diam1_2013, na.rm = TRUE),
+             mean(diam2_2013, na.rm = TRUE),
+             mean(height_2013, na.rm = TRUE)),
+    Max = c(max(diam1_2013, na.rm = TRUE),
+            max(diam2_2013, na.rm = TRUE),
+            max(height_2013, na.rm = TRUE)),
+    N_Valid = c(sum(!is.na(diam1_2013)),
+                sum(!is.na(diam2_2013)),
+                sum(!is.na(height_2013)))
+  )
+
+  kable(size_summary_2013, digits = 2, caption = "Size Measurements Summary (2013)")
+
+  # Histogram of sizes
+  size_data_2013 <- tibble(
+    Diam1 = diam1_2013,
+    Diam2 = diam2_2013,
+    Height = height_2013
+  ) %>%
+    pivot_longer(everything(), names_to = "Measurement", values_to = "Size_cm")
+
+  ggplot(size_data_2013, aes(x = Size_cm, fill = Measurement)) +
+    geom_histogram(bins = 30, alpha = 0.7) +
+    facet_wrap(~Measurement, scales = "free") +
+    scale_fill_brewer(palette = "Set2") +
+    labs(title = "Size Distribution (2013)",
+         x = "Size (cm)", y = "Count") +
+    theme_minimal()
+}
+```
+
+---
+
+# 6. Data Quality Issues
+
+```{r data-quality-issues}
+# Identify potential issues
+
+issues <- list()
+
+# Check for duplicate Coral IDs
+duplicate_ids <- coral_raw %>%
+  count(`Coral ID`) %>%
+  filter(n > 1)
+
+if (nrow(duplicate_ids) > 0) {
+  issues$duplicate_ids <- paste(nrow(duplicate_ids), "duplicate Coral IDs found")
+}
+
+# Check for implausible measurements (e.g., negative sizes, extremely large)
+if (!is.null(diam1_2013)) {
+  if (any(diam1_2013 < 0, na.rm = TRUE)) {
+    issues$negative_sizes <- "Negative diameter measurements found"
+  }
+  if (any(diam1_2013 > 200, na.rm = TRUE)) {
+    issues$large_sizes <- "Extremely large diameter measurements (>200cm) found"
+  }
+}
+
+# Check for colonies outside transect boundaries (assuming 1m x 5m)
+out_of_bounds <- coral_raw %>%
+  filter(X < 0 | X > 1 | Y < 0 | Y > 5)
+
+if (nrow(out_of_bounds) > 0) {
+  issues$out_of_bounds <- paste(nrow(out_of_bounds), "colonies outside transect boundaries")
+}
+
+# Print issues
+if (length(issues) > 0) {
+  cat("⚠ DATA QUALITY ISSUES DETECTED:\n\n")
+  iwalk(issues, ~cat(.y, ": ", .x, "\n"))
+} else {
+  cat("✓ No major data quality issues detected\n")
+}
+```
+
+---
+
+# 7. Summary & Next Steps
+
+## Key Findings
+
+```{r summary}
+summary_stats <- tibble(
+  Metric = c(
+    "Total colonies",
+    "Number of genera",
+    "Number of transects",
+    "Years of monitoring",
+    "Total observations (colony-years)"
+  ),
+  Value = c(
+    nrow(coral_raw),
+    n_distinct(coral_raw$Genus, na.rm = TRUE),
+    n_distinct(coral_raw$Transect, na.rm = TRUE),
+    length(2013:2023),
+    NA  # Will calculate after transformation
+  )
+)
+
+kable(summary_stats, caption = "Dataset Summary Statistics")
+```
+
+## Recommendations for Next Steps
+
+1. **Data Transformation**: Convert wide-format to long (tidy) format for analysis
+2. **Missing Data Handling**: Investigate missing data patterns and document codes (Na, UK, D)
+3. **Outlier Investigation**: Review flagged measurements for biological plausibility
+4. **Demographic Analysis**: Calculate recruitment, growth, and mortality rates
+5. **Survival Analysis**: Prepare data for Kaplan-Meier estimation
+
+---
+
+# Session Info
+
+```{r session-info}
+sessionInfo()
+```

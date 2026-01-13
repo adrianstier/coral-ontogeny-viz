@@ -1,0 +1,190 @@
+name: R Data Analysis Pipeline
+
+on:
+  push:
+    paths:
+      - 'data/raw/**'
+      - 'scripts/R/**'
+      - 'notebooks/**'
+      - '.github/workflows/r-analysis.yml'
+  pull_request:
+    paths:
+      - 'data/raw/**'
+      - 'scripts/R/**'
+      - 'notebooks/**'
+  workflow_dispatch:
+
+jobs:
+  validate-and-transform:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup R
+        uses: r-lib/actions/setup-r@v2
+        with:
+          r-version: '4.4.0'
+
+      - name: Setup renv
+        uses: r-lib/actions/setup-renv@v2
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libcurl4-openssl-dev libssl-dev libxml2-dev
+
+      - name: Cache R packages
+        uses: actions/cache@v3
+        with:
+          path: ~/.local/share/renv
+          key: ${{ runner.os }}-renv-${{ hashFiles('**/renv.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-renv-
+
+      - name: Restore R packages
+        run: |
+          R -e "renv::restore()"
+
+      - name: Create output directories
+        run: |
+          mkdir -p outputs/figures outputs/reports outputs/exports
+
+      - name: Validate data quality
+        run: |
+          Rscript scripts/R/01_validate_data.R
+
+      - name: Upload validation report
+        uses: actions/upload-artifact@v3
+        if: always()
+        with:
+          name: data-quality-report
+          path: outputs/reports/data_quality_report.html
+
+      - name: Transform data
+        run: |
+          Rscript scripts/R/02_transform_data.R
+
+      - name: Check processed data exists
+        run: |
+          ls -lh data/processed/coral_long_format.csv
+          ls -lh data/processed/coral_enriched.parquet
+
+      - name: Upload processed data
+        uses: actions/upload-artifact@v3
+        with:
+          name: processed-data
+          path: |
+            data/processed/coral_long_format.csv
+            data/processed/coral_enriched.parquet
+            data/processed/summary_statistics.rds
+
+  run-tests:
+    runs-on: ubuntu-latest
+    needs: validate-and-transform
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup R
+        uses: r-lib/actions/setup-r@v2
+        with:
+          r-version: '4.4.0'
+
+      - name: Setup renv
+        uses: r-lib/actions/setup-renv@v2
+
+      - name: Restore R packages
+        run: |
+          R -e "renv::restore()"
+
+      - name: Run unit tests
+        run: |
+          R -e "testthat::test_dir('tests/unit')"
+
+      - name: Test results summary
+        if: always()
+        run: |
+          echo "✓ Unit tests completed"
+
+  render-notebooks:
+    runs-on: ubuntu-latest
+    needs: validate-and-transform
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup R
+        uses: r-lib/actions/setup-r@v2
+        with:
+          r-version: '4.4.0'
+
+      - name: Setup Pandoc
+        uses: r-lib/actions/setup-pandoc@v2
+
+      - name: Setup renv
+        uses: r-lib/actions/setup-renv@v2
+
+      - name: Restore R packages
+        run: |
+          R -e "renv::restore()"
+
+      - name: Download processed data
+        uses: actions/download-artifact@v3
+        with:
+          name: processed-data
+          path: data/processed/
+
+      - name: Create output directories
+        run: |
+          mkdir -p outputs/figures outputs/reports
+
+      - name: Render data exploration notebook
+        run: |
+          Rscript -e "rmarkdown::render('notebooks/01_data_exploration.Rmd')"
+
+      - name: Render demographic analysis notebook
+        run: |
+          Rscript -e "rmarkdown::render('notebooks/02_demographic_analysis.Rmd')"
+
+      - name: Render survival analysis notebook
+        run: |
+          Rscript -e "rmarkdown::render('notebooks/03_survival_analysis.Rmd')"
+
+      - name: Upload HTML reports
+        uses: actions/upload-artifact@v3
+        with:
+          name: analysis-reports
+          path: |
+            notebooks/*.html
+
+      - name: Upload figures
+        uses: actions/upload-artifact@v3
+        with:
+          name: analysis-figures
+          path: outputs/figures/
+
+  build-status:
+    runs-on: ubuntu-latest
+    needs: [validate-and-transform, run-tests, render-notebooks]
+    if: always()
+
+    steps:
+      - name: Check workflow status
+        run: |
+          echo "Data validation: ${{ needs.validate-and-transform.result }}"
+          echo "Unit tests: ${{ needs.run-tests.result }}"
+          echo "Notebook rendering: ${{ needs.render-notebooks.result }}"
+
+          if [ "${{ needs.validate-and-transform.result }}" == "success" ] && \
+             [ "${{ needs.run-tests.result }}" == "success" ] && \
+             [ "${{ needs.render-notebooks.result }}" == "success" ]; then
+            echo "✓✓✓ All R analysis pipeline checks passed!"
+            exit 0
+          else
+            echo "✗ Some R analysis pipeline checks failed"
+            exit 1
+          fi

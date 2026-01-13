@@ -1,0 +1,428 @@
+---
+title: "Coral Spatial Pattern Analysis"
+author: "MCR LTER Analysis"
+date: "`r Sys.Date()`"
+output:
+  html_document:
+    toc: true
+    toc_float: true
+    code_folding: show
+    theme: flatly
+    df_print: paged
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  echo = TRUE,
+  warning = FALSE,
+  message = FALSE,
+  fig.width = 12,
+  fig.height = 8,
+  dpi = 300
+)
+
+library(here)
+library(tidyverse)
+library(knitr)
+library(patchwork)
+library(spatstat)  # For spatial point pattern analysis
+
+# Source utility functions
+source(here("scripts/R/utils.R"))
+```
+
+# Overview
+
+This notebook analyzes spatial patterns in coral colony distribution:
+
+- Spatial autocorrelation
+- Clustering patterns
+- Nearest neighbor analysis
+- Genus-specific spatial segregation
+- Temporal changes in spatial structure
+
+---
+
+# 1. Load Data
+
+```{r load-data}
+# Load processed data
+coral_long <- read_csv(here("data/processed/coral_long_format.csv"))
+
+cat("Total observations:", nrow(coral_long), "\n")
+cat("Unique colonies:", n_distinct(coral_long$coral_id), "\n")
+
+glimpse(coral_long)
+```
+
+---
+
+# 2. Spatial Distribution Maps
+
+## 2.1 Colony Positions by Transect
+
+```{r spatial-maps}
+# Get most recent year data for visualization
+current_year <- max(coral_long$year, na.rm = TRUE)
+
+spatial_data <- coral_long %>%
+  filter(year == current_year, !is.na(x), !is.na(y), !is.na(genus))
+
+# Create spatial maps for each transect
+p_t01 <- spatial_data %>%
+  filter(transect == "T01") %>%
+  ggplot(aes(x = y, y = x, color = genus, size = geom_mean_diam)) +
+  geom_point(alpha = 0.7) +
+  scale_color_manual(values = genus_colors()) +
+  scale_size_continuous(range = c(2, 12), name = "Diameter (cm)") +
+  coord_fixed(ratio = 5) +  # 5m x 1m transect
+  labs(title = paste("Transect T01 -", current_year),
+       x = "Along-transect position (m)", y = "Across-transect position (m)",
+       color = "Genus") +
+  theme_minimal() +
+  theme(legend.position = "bottom")
+
+p_t02 <- spatial_data %>%
+  filter(transect == "T02") %>%
+  ggplot(aes(x = y, y = x, color = genus, size = geom_mean_diam)) +
+  geom_point(alpha = 0.7) +
+  scale_color_manual(values = genus_colors()) +
+  scale_size_continuous(range = c(2, 12), name = "Diameter (cm)") +
+  coord_fixed(ratio = 5) +
+  labs(title = paste("Transect T02 -", current_year),
+       x = "Along-transect position (m)", y = "Across-transect position (m)",
+       color = "Genus") +
+  theme_minimal() +
+  theme(legend.position = "bottom")
+
+p_t01 / p_t02
+
+ggsave(here("outputs/figures/spatial_distribution_maps.png"),
+       width = 12, height = 10, dpi = 300)
+```
+
+## 2.2 Density Heatmaps
+
+```{r density-heatmaps}
+# Create 2D density plots
+ggplot(spatial_data, aes(x = y, y = x)) +
+  stat_density_2d(aes(fill = after_stat(level)), geom = "polygon", alpha = 0.6) +
+  geom_point(size = 1, alpha = 0.4) +
+  facet_wrap(~transect, ncol = 2) +
+  scale_fill_viridis_c(name = "Density") +
+  coord_fixed(ratio = 5) +
+  labs(title = "Colony Density Distribution",
+       x = "Along-transect position (m)", y = "Across-transect position (m)") +
+  theme_minimal()
+
+ggsave(here("outputs/figures/spatial_density_heatmap.png"),
+       width = 12, height = 6, dpi = 300)
+```
+
+---
+
+# 3. Nearest Neighbor Analysis
+
+```{r nearest-neighbor}
+# Function to calculate nearest neighbor distances
+calc_nearest_neighbor <- function(data, transect_name) {
+  data_transect <- data %>%
+    filter(transect == transect_name, !is.na(x), !is.na(y))
+
+  if (nrow(data_transect) < 2) return(NULL)
+
+  # Create distance matrix
+  coords <- data_transect %>% select(x, y) %>% as.matrix()
+  dist_matrix <- as.matrix(dist(coords))
+  diag(dist_matrix) <- NA  # Exclude self-distances
+
+  # Calculate nearest neighbor distance for each colony
+  nn_dist <- apply(dist_matrix, 1, function(x) min(x, na.rm = TRUE))
+
+  data_transect %>%
+    mutate(nn_distance = nn_dist)
+}
+
+# Calculate for current year
+nn_results <- bind_rows(
+  calc_nearest_neighbor(spatial_data, "T01"),
+  calc_nearest_neighbor(spatial_data, "T02")
+)
+
+# Summary statistics
+nn_summary <- nn_results %>%
+  group_by(transect, genus) %>%
+  summarise(
+    n = n(),
+    mean_nn = mean(nn_distance, na.rm = TRUE),
+    median_nn = median(nn_distance, na.rm = TRUE),
+    sd_nn = sd(nn_distance, na.rm = TRUE),
+    .groups = "drop"
+  )
+
+kable(nn_summary, digits = 3, caption = "Nearest Neighbor Statistics by Transect and Genus")
+
+# Visualization
+ggplot(nn_results, aes(x = genus, y = nn_distance, fill = genus)) +
+  geom_boxplot(alpha = 0.7) +
+  facet_wrap(~transect) +
+  scale_fill_manual(values = genus_colors()) +
+  labs(title = "Nearest Neighbor Distances",
+       x = "Genus", y = "Distance to Nearest Neighbor (m)") +
+  theme_minimal() +
+  theme(legend.position = "none")
+
+ggsave(here("outputs/figures/nearest_neighbor_distances.png"),
+       width = 10, height = 6, dpi = 300)
+```
+
+---
+
+# 4. Spatial Clustering Analysis
+
+```{r clustering}
+# Test for spatial clustering using Ripley's K function
+# Requires spatstat package
+
+analyze_clustering <- function(data, transect_name) {
+  data_sub <- data %>%
+    filter(transect == transect_name, !is.na(x), !is.na(y))
+
+  if (nrow(data_sub) < 10) {
+    cat("Insufficient data for", transect_name, "\n")
+    return(NULL)
+  }
+
+  # Create point pattern object (transect is 0-1m × 0-5m)
+  pp <- ppp(x = data_sub$y, y = data_sub$x,
+            xrange = c(0, 5), yrange = c(0, 1),
+            marks = as.factor(data_sub$genus))
+
+  # Ripley's K function
+  k_est <- Kest(pp, correction = "border")
+
+  # Plot
+  plot(k_est, main = paste("Ripley's K Function -", transect_name))
+
+  return(k_est)
+}
+
+# Analyze each transect
+par(mfrow = c(1, 2))
+k_t01 <- analyze_clustering(spatial_data, "T01")
+k_t02 <- analyze_clustering(spatial_data, "T02")
+par(mfrow = c(1, 1))
+
+# Save plot
+png(here("outputs/figures/spatial_clustering_ripleys_k.png"),
+    width = 12, height = 6, units = "in", res = 300)
+par(mfrow = c(1, 2))
+if (!is.null(k_t01)) plot(k_t01, main = "Ripley's K Function - T01")
+if (!is.null(k_t02)) plot(k_t02, main = "Ripley's K Function - T02")
+par(mfrow = c(1, 1))
+dev.off()
+```
+
+---
+
+# 5. Genus Spatial Segregation
+
+```{r genus-segregation}
+# Test if different genera are spatially segregated
+# Using mark correlation function
+
+analyze_segregation <- function(data, transect_name) {
+  data_sub <- data %>%
+    filter(transect == transect_name, !is.na(x), !is.na(y))
+
+  if (nrow(data_sub) < 20) {
+    cat("Insufficient data for", transect_name, "\n")
+    return(NULL)
+  }
+
+  # Create point pattern with genus marks
+  pp <- ppp(x = data_sub$y, y = data_sub$x,
+            xrange = c(0, 5), yrange = c(0, 1),
+            marks = as.factor(data_sub$genus))
+
+  # Mark correlation function
+  mcf <- markcorr(pp)
+
+  plot(mcf, main = paste("Genus Spatial Correlation -", transect_name))
+
+  return(mcf)
+}
+
+# Analyze segregation
+par(mfrow = c(1, 2))
+mcf_t01 <- analyze_segregation(spatial_data, "T01")
+mcf_t02 <- analyze_segregation(spatial_data, "T02")
+par(mfrow = c(1, 1))
+```
+
+---
+
+# 6. Spatial Autocorrelation of Size
+
+```{r size-autocorrelation}
+# Test if colony size is spatially autocorrelated
+# Larger colonies near larger colonies?
+
+spatial_autocorr <- function(data, transect_name) {
+  data_sub <- data %>%
+    filter(transect == transect_name,
+           !is.na(x), !is.na(y), !is.na(geom_mean_diam))
+
+  if (nrow(data_sub) < 10) return(NULL)
+
+  # Create distance matrix
+  coords <- data_sub %>% select(x, y) %>% as.matrix()
+  dist_matrix <- as.matrix(dist(coords))
+
+  # Moran's I for spatial autocorrelation
+  # Weight matrix: inverse distance
+  weights <- 1 / dist_matrix
+  diag(weights) <- 0
+  weights[is.infinite(weights)] <- 0
+
+  # Normalize weights
+  row_sums <- rowSums(weights)
+  weights <- weights / row_sums
+
+  # Calculate Moran's I
+  sizes <- data_sub$geom_mean_diam
+  mean_size <- mean(sizes)
+
+  numerator <- sum(weights * outer(sizes - mean_size, sizes - mean_size, "*"))
+  denominator <- sum((sizes - mean_size)^2)
+
+  morans_i <- (nrow(data_sub) / sum(weights)) * (numerator / denominator)
+
+  list(
+    transect = transect_name,
+    morans_i = morans_i,
+    n = nrow(data_sub)
+  )
+}
+
+# Calculate for both transects
+autocorr_t01 <- spatial_autocorr(spatial_data, "T01")
+autocorr_t02 <- spatial_autocorr(spatial_data, "T02")
+
+cat("\nSpatial Autocorrelation of Colony Size (Moran's I):\n")
+cat("T01: I =", round(autocorr_t01$morans_i, 3), "(n =", autocorr_t01$n, ")\n")
+cat("T02: I =", round(autocorr_t02$morans_i, 3), "(n =", autocorr_t02$n, ")\n")
+cat("\nInterpretation: I > 0 indicates positive spatial autocorrelation (clustering of similar sizes)\n")
+```
+
+---
+
+# 7. Temporal Changes in Spatial Patterns
+
+```{r temporal-spatial}
+# How has spatial structure changed over time?
+
+# Calculate nearest neighbor distances for each year
+nn_temporal <- coral_long %>%
+  filter(!is.na(x), !is.na(y), !is.na(genus)) %>%
+  group_by(year, transect) %>%
+  filter(n() >= 5) %>%  # Only years with sufficient data
+  group_split() %>%
+  map_df(function(data) {
+    if (nrow(data) < 2) return(NULL)
+
+    coords <- data %>% select(x, y) %>% as.matrix()
+    dist_matrix <- as.matrix(dist(coords))
+    diag(dist_matrix) <- NA
+    nn_dist <- apply(dist_matrix, 1, function(x) min(x, na.rm = TRUE))
+
+    tibble(
+      year = unique(data$year),
+      transect = unique(data$transect),
+      mean_nn = mean(nn_dist, na.rm = TRUE),
+      median_nn = median(nn_dist, na.rm = TRUE),
+      n_colonies = nrow(data)
+    )
+  })
+
+# Plot temporal trends
+ggplot(nn_temporal, aes(x = year, y = mean_nn, color = transect)) +
+  geom_line(linewidth = 1.2) +
+  geom_point(size = 3) +
+  scale_color_brewer(palette = "Set1") +
+  labs(title = "Temporal Changes in Nearest Neighbor Distance",
+       subtitle = "Increasing distance indicates colonies becoming more spread out",
+       x = "Year", y = "Mean Nearest Neighbor Distance (m)",
+       color = "Transect") +
+  theme_minimal() +
+  theme(legend.position = "bottom")
+
+ggsave(here("outputs/figures/temporal_spatial_patterns.png"),
+       width = 10, height = 6, dpi = 300)
+```
+
+---
+
+# 8. Recruitment Spatial Patterns
+
+```{r recruitment-spatial}
+# Where do recruits appear relative to existing colonies?
+
+recruits <- coral_long %>%
+  filter(is_recruit, !is.na(x), !is.na(y)) %>%
+  select(coral_id, transect, first_year, x, y, genus)
+
+existing_2013 <- coral_long %>%
+  filter(year == 2013, !is.na(x), !is.na(y)) %>%
+  select(coral_id, transect, x, y, genus)
+
+cat("Total recruits:", nrow(recruits), "\n")
+cat("Existing colonies (2013):", nrow(existing_2013), "\n")
+
+# Plot recruitment locations
+ggplot() +
+  geom_point(data = existing_2013, aes(x = y, y = x),
+             color = "gray60", size = 2, alpha = 0.5, shape = 1) +
+  geom_point(data = recruits, aes(x = y, y = x, color = genus),
+             size = 4, alpha = 0.8) +
+  facet_wrap(~transect, ncol = 2) +
+  scale_color_manual(values = genus_colors()) +
+  coord_fixed(ratio = 5) +
+  labs(title = "Recruitment Locations Relative to Baseline (2013)",
+       subtitle = "Gray circles = existing colonies, colored points = recruits",
+       x = "Along-transect position (m)", y = "Across-transect position (m)",
+       color = "Recruit Genus") +
+  theme_minimal()
+
+ggsave(here("outputs/figures/recruitment_spatial_patterns.png"),
+       width = 12, height = 6, dpi = 300)
+```
+
+---
+
+# 9. Summary
+
+```{r summary}
+cat("SPATIAL ANALYSIS SUMMARY\n")
+cat(strrep("=", 50), "\n\n")
+
+cat("Current year analyzed:", current_year, "\n")
+cat("Total colonies in spatial analysis:", nrow(spatial_data), "\n\n")
+
+cat("Mean nearest neighbor distances:\n")
+print(nn_summary %>% select(transect, genus, mean_nn))
+
+cat("\nSpatial autocorrelation (Moran's I):\n")
+cat("  T01:", round(autocorr_t01$morans_i, 3), "\n")
+cat("  T02:", round(autocorr_t02$morans_i, 3), "\n")
+
+cat("\nRecruitment events:", nrow(recruits), "\n")
+```
+
+---
+
+# Session Info
+
+```{r session-info}
+sessionInfo()
+```

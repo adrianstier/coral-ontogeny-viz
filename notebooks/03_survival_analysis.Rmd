@@ -1,0 +1,385 @@
+---
+title: "Coral Survival Analysis"
+author: "MCR LTER Analysis"
+date: "`r Sys.Date()`"
+output:
+  html_document:
+    toc: true
+    toc_float: true
+    code_folding: show
+    theme: flatly
+    df_print: paged
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  echo = TRUE,
+  warning = FALSE,
+  message = FALSE,
+  fig.width = 10,
+  fig.height = 6,
+  dpi = 300
+)
+
+library(here)
+library(tidyverse)
+library(survival)
+library(survminer)
+library(knitr)
+library(patchwork)
+
+# Source utility functions
+source(here("scripts/R/utils.R"))
+```
+
+# Overview
+
+This notebook performs survival analysis on coral colony data using:
+
+- Kaplan-Meier survival curves
+- Log-rank tests for genus comparisons
+- Cox proportional hazards models
+- Size-dependent mortality analysis
+
+---
+
+# 1. Load and Prepare Survival Data
+
+```{r load-data}
+# Load processed data
+coral_long <- read_csv(here("data/processed/coral_long_format.csv"))
+
+# Create survival dataset
+# For each colony, we need:
+# - Time of entry (recruitment year or first observation)
+# - Time of exit (death year or censoring at last observation)
+# - Event indicator (1 = death, 0 = censored)
+# - Covariates (genus, initial size, transect)
+
+survival_data <- coral_long %>%
+  filter(!is.na(status)) %>%
+  group_by(coral_id) %>%
+  arrange(year) %>%
+  summarise(
+    genus = first(genus),
+    transect = first(transect),
+    entry_year = min(year),
+    exit_year = max(year),
+    died = any(status == "D" | grepl("death|dead", fate, ignore.case = TRUE)),
+    initial_size = first(sqrt(diam1 * diam2), na_rm = TRUE),
+    .groups = "drop"
+  ) %>%
+  mutate(
+    time = exit_year - entry_year,  # Duration in study
+    event = as.numeric(died)  # 1 = death, 0 = censored
+  ) %>%
+  filter(time >= 0)  # Remove invalid entries
+
+cat("Total colonies in survival analysis:", nrow(survival_data), "\n")
+cat("Deaths observed:", sum(survival_data$event), "\n")
+cat("Censored (still alive):", sum(!survival_data$event), "\n")
+
+glimpse(survival_data)
+```
+
+---
+
+# 2. Kaplan-Meier Survival Curves
+
+## 2.1 Overall Survival
+
+```{r km-overall}
+# Fit Kaplan-Meier model
+km_fit <- survfit(Surv(time, event) ~ 1, data = survival_data)
+
+# Summary
+summary(km_fit, times = 0:10)
+
+# Plot
+ggsurvplot(
+  km_fit,
+  data = survival_data,
+  conf.int = TRUE,
+  risk.table = TRUE,
+  xlim = c(0, 11),
+  break.x.by = 1,
+  xlab = "Years in Study",
+  ylab = "Survival Probability",
+  title = "Overall Coral Colony Survival",
+  ggtheme = theme_minimal()
+)
+
+# Save plot
+ggsave(here("outputs/figures/survival_overall.png"),
+       width = 10, height = 8, dpi = 300)
+```
+
+## 2.2 Survival by Genus
+
+```{r km-by-genus}
+# Fit Kaplan-Meier model stratified by genus
+km_genus <- survfit(Surv(time, event) ~ genus, data = survival_data)
+
+# Summary
+summary(km_genus, times = c(1, 3, 5, 7, 10))
+
+# Plot
+ggsurvplot(
+  km_genus,
+  data = survival_data,
+  conf.int = TRUE,
+  pval = TRUE,  # Add log-rank test p-value
+  risk.table = TRUE,
+  xlim = c(0, 11),
+  break.x.by = 1,
+  xlab = "Years in Study",
+  ylab = "Survival Probability",
+  title = "Coral Survival by Genus",
+  legend.title = "Genus",
+  legend.labs = levels(factor(survival_data$genus)),
+  palette = "Set1",
+  ggtheme = theme_minimal()
+)
+
+# Save plot
+ggsave(here("outputs/figures/survival_by_genus.png"),
+       width = 10, height = 10, dpi = 300)
+```
+
+## 2.3 Log-Rank Test
+
+```{r log-rank-test}
+# Test for differences in survival between genera
+logrank_test <- survdiff(Surv(time, event) ~ genus, data = survival_data)
+
+print(logrank_test)
+
+# Extract p-value
+pval <- 1 - pchisq(logrank_test$chisq, length(logrank_test$n) - 1)
+cat("\nLog-rank test p-value:", format.pval(pval), "\n")
+
+# Pairwise comparisons
+pairwise_test <- pairwise_survdiff(Surv(time, event) ~ genus,
+                                   data = survival_data,
+                                   p.adjust.method = "bonferroni")
+
+kable(pairwise_test$p.value, digits = 4, caption = "Pairwise Log-Rank Tests (Bonferroni corrected)")
+```
+
+---
+
+# 3. Cox Proportional Hazards Models
+
+## 3.1 Univariate Models
+
+```{r cox-univariate}
+# Genus effect
+cox_genus <- coxph(Surv(time, event) ~ genus, data = survival_data)
+summary(cox_genus)
+
+# Transect effect
+cox_transect <- coxph(Surv(time, event) ~ transect, data = survival_data)
+summary(cox_transect)
+
+# Initial size effect
+cox_size <- coxph(Surv(time, event) ~ initial_size,
+                  data = survival_data %>% filter(!is.na(initial_size)))
+summary(cox_size)
+```
+
+## 3.2 Multivariate Model
+
+```{r cox-multivariate}
+# Combined model
+cox_multi <- coxph(Surv(time, event) ~ genus + transect + initial_size,
+                   data = survival_data %>% filter(!is.na(initial_size)))
+
+summary(cox_multi)
+
+# Extract coefficients
+cox_coef <- broom::tidy(cox_multi, exponentiate = TRUE, conf.int = TRUE)
+kable(cox_coef, digits = 3, caption = "Cox Model Hazard Ratios")
+
+# Visualize hazard ratios
+ggplot(cox_coef, aes(x = term, y = estimate)) +
+  geom_point(size = 3) +
+  geom_errorbar(aes(ymin = conf.low, ymax = conf.high), width = 0.2) +
+  geom_hline(yintercept = 1, linetype = "dashed", color = "red") +
+  coord_flip() +
+  scale_y_log10() +
+  labs(title = "Cox Model Hazard Ratios",
+       subtitle = "With 95% confidence intervals",
+       x = "Covariate", y = "Hazard Ratio (log scale)") +
+  theme_minimal()
+
+ggsave(here("outputs/figures/cox_hazard_ratios.png"),
+       width = 8, height = 6, dpi = 300)
+```
+
+## 3.3 Model Diagnostics
+
+```{r cox-diagnostics}
+# Test proportional hazards assumption
+ph_test <- cox.zph(cox_multi)
+print(ph_test)
+
+# Plot Schoenfeld residuals
+ggcoxzph(ph_test)
+
+ggsave(here("outputs/figures/cox_ph_diagnostics.png"),
+       width = 10, height = 8, dpi = 300)
+
+# Influential observations
+ggcoxdiagnostics(cox_multi, type = "dfbeta")
+
+ggsave(here("outputs/figures/cox_dfbeta.png"),
+       width = 10, height = 6, dpi = 300)
+```
+
+---
+
+# 4. Size-Dependent Mortality
+
+```{r size-mortality}
+# Categorize initial size
+survival_data_size <- survival_data %>%
+  filter(!is.na(initial_size)) %>%
+  mutate(
+    size_class = cut(initial_size,
+                     breaks = c(0, 5, 10, 20, Inf),
+                     labels = c("Small (<5cm)", "Medium (5-10cm)",
+                                "Large (10-20cm)", "Very Large (>20cm)"))
+  )
+
+# Survival by size class
+km_size <- survfit(Surv(time, event) ~ size_class, data = survival_data_size)
+
+ggsurvplot(
+  km_size,
+  data = survival_data_size,
+  conf.int = TRUE,
+  pval = TRUE,
+  risk.table = TRUE,
+  xlim = c(0, 11),
+  break.x.by = 1,
+  xlab = "Years in Study",
+  ylab = "Survival Probability",
+  title = "Survival by Initial Colony Size",
+  legend.title = "Size Class",
+  palette = "RdYlGn",
+  ggtheme = theme_minimal()
+)
+
+ggsave(here("outputs/figures/survival_by_size.png"),
+       width = 10, height = 10, dpi = 300)
+
+# Test for trend
+logrank_size <- survdiff(Surv(time, event) ~ size_class, data = survival_data_size)
+print(logrank_size)
+```
+
+---
+
+# 5. Genus-Specific Size Effects
+
+```{r genus-size-interaction}
+# Cox model with genus-size interaction
+cox_interaction <- coxph(Surv(time, event) ~ genus * initial_size,
+                         data = survival_data %>% filter(!is.na(initial_size)))
+
+summary(cox_interaction)
+
+# Visualize size effect by genus
+survival_data_plot <- survival_data %>%
+  filter(!is.na(initial_size)) %>%
+  mutate(size_bin = cut(initial_size, breaks = seq(0, 50, 5)))
+
+mortality_rate <- survival_data_plot %>%
+  group_by(genus, size_bin) %>%
+  summarise(
+    n = n(),
+    deaths = sum(event),
+    mortality_rate = deaths / n,
+    .groups = "drop"
+  ) %>%
+  filter(n >= 5)  # Only bins with sufficient sample size
+
+ggplot(mortality_rate, aes(x = size_bin, y = mortality_rate, color = genus, group = genus)) +
+  geom_line(linewidth = 1) +
+  geom_point(aes(size = n)) +
+  scale_color_brewer(palette = "Set1") +
+  labs(title = "Mortality Rate by Initial Size and Genus",
+       x = "Initial Size (cm)", y = "Mortality Rate",
+       color = "Genus", size = "Sample Size") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+ggsave(here("outputs/figures/mortality_vs_size_by_genus.png"),
+       width = 10, height = 6, dpi = 300)
+```
+
+---
+
+# 6. Median Survival Times
+
+```{r median-survival}
+# Extract median survival times by genus
+median_survival <- survival_data %>%
+  group_by(genus) %>%
+  nest() %>%
+  mutate(
+    km = map(data, ~survfit(Surv(time, event) ~ 1, data = .x)),
+    median_surv = map_dbl(km, ~summary(.x)$table["median"]),
+    lower_ci = map_dbl(km, ~summary(.x)$table["0.95LCL"]),
+    upper_ci = map_dbl(km, ~summary(.x)$table["0.95UCL"])
+  ) %>%
+  select(genus, median_surv, lower_ci, upper_ci)
+
+kable(median_survival, digits = 2,
+      caption = "Median Survival Time by Genus (years)",
+      col.names = c("Genus", "Median", "Lower 95% CI", "Upper 95% CI"))
+
+# Visualize
+ggplot(median_survival, aes(x = reorder(genus, median_surv), y = median_surv)) +
+  geom_col(aes(fill = genus), alpha = 0.7) +
+  geom_errorbar(aes(ymin = lower_ci, ymax = upper_ci), width = 0.2) +
+  scale_fill_brewer(palette = "Set2") +
+  labs(title = "Median Survival Time by Genus",
+       subtitle = "With 95% confidence intervals",
+       x = "Genus", y = "Median Survival Time (years)") +
+  theme_minimal() +
+  theme(legend.position = "none")
+
+ggsave(here("outputs/figures/median_survival_by_genus.png"),
+       width = 8, height = 6, dpi = 300)
+```
+
+---
+
+# 7. Summary Table
+
+```{r summary-table}
+# Comprehensive survival summary
+survival_summary <- survival_data %>%
+  group_by(genus) %>%
+  summarise(
+    n_colonies = n(),
+    n_deaths = sum(event),
+    n_censored = sum(!event),
+    mortality_rate = mean(event),
+    mean_time = mean(time),
+    median_time = median(time),
+    .groups = "drop"
+  )
+
+kable(survival_summary, digits = 2,
+      caption = "Survival Analysis Summary by Genus")
+```
+
+---
+
+# Session Info
+
+```{r session-info}
+sessionInfo()
+```

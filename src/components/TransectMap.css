@@ -1,0 +1,640 @@
+/* ==========================================
+   TransectMap Component - Premium Edition
+   Pitch-Ready Visualization
+   ========================================== */
+
+.transect-map-container {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  animation: fadeIn 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ==========================================
+   MAP HEADER - Professional Statistics Bar
+   ========================================== */
+
+.map-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid rgba(6, 255, 165, 0.15);
+  position: relative;
+}
+
+.map-header::after {
+  content: '';
+  position: absolute;
+  bottom: -1px;
+  left: 0;
+  height: 1px;
+  width: 30%;
+  background: linear-gradient(90deg, rgba(6, 255, 165, 0.6), transparent);
+  animation: slideIn 1s ease-out;
+}
+
+@keyframes slideIn {
+  from {
+    width: 0;
+  }
+  to {
+    width: 30%;
+  }
+}
+
+.card-title {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #f8f9fa;
+  letter-spacing: -0.01em;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  position: relative;
+}
+
+.card-title::before {
+  content: '';
+  width: 4px;
+  height: 1.5rem;
+  background: linear-gradient(180deg, #06ffa5 0%, #0496ff 100%);
+  border-radius: 2px;
+  box-shadow: 0 0 10px rgba(6, 255, 165, 0.4);
+}
+
+.map-stats {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+}
+
+.stat {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.625rem 1rem;
+  background: linear-gradient(135deg, rgba(6, 255, 165, 0.08), rgba(4, 150, 255, 0.06));
+  border: 1px solid rgba(6, 255, 165, 0.25);
+  border-radius: 0.625rem;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.875rem;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.stat::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(6, 255, 165, 0.15), transparent);
+  transition: left 0.6s ease;
+}
+
+.stat:hover::before {
+  left: 100%;
+}
+
+.stat:hover {
+  background: linear-gradient(135deg, rgba(6, 255, 165, 0.15), rgba(4, 150, 255, 0.12));
+  border-color: rgba(6, 255, 165, 0.4);
+  box-shadow:
+    0 0 20px rgba(6, 255, 165, 0.25),
+    0 4px 12px rgba(0, 0, 0, 0.3);
+  transform: translateY(-2px);
+}
+
+.stat-label {
+  color: #adb5bd;
+  opacity: 0.85;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 0.65rem;
+  font-weight: 600;
+}
+
+.stat-value {
+  color: #06ffa5;
+  font-weight: 700;
+  font-size: 1.25rem;
+  text-shadow: 0 0 10px rgba(6, 255, 165, 0.3);
+}
+
+/* ==========================================
+   SVG CANVAS - Premium Dark Mode
+   ========================================== */
+
+.transect-svg {
+  width: 100%;
+  height: 550px;
+  background:
+    radial-gradient(ellipse at 20% 30%, rgba(6, 255, 165, 0.03) 0%, transparent 50%),
+    radial-gradient(ellipse at 80% 70%, rgba(4, 150, 255, 0.02) 0%, transparent 50%),
+    rgba(10, 22, 40, 0.5);
+  border-radius: 1rem;
+  border: 1px solid rgba(119, 141, 169, 0.15);
+  cursor: crosshair;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow:
+    inset 0 2px 8px rgba(0, 0, 0, 0.3),
+    0 4px 20px rgba(0, 0, 0, 0.2);
+  position: relative;
+  overflow: hidden;
+}
+
+.transect-svg::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 100%;
+  background:
+    linear-gradient(180deg, rgba(6, 255, 165, 0.02) 0%, transparent 30%);
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.4s ease;
+}
+
+.transect-svg:hover {
+  border-color: rgba(6, 255, 165, 0.3);
+  box-shadow:
+    inset 0 2px 8px rgba(0, 0, 0, 0.3),
+    0 8px 32px rgba(0, 0, 0, 0.3),
+    0 0 40px rgba(6, 255, 165, 0.08);
+}
+
+.transect-svg:hover::before {
+  opacity: 1;
+}
+
+/* ==========================================
+   SVG ELEMENTS - Enhanced Visualization
+   ========================================== */
+
+/* Grid Lines - Subtle & Professional */
+.transect-svg .grid-line {
+  stroke: rgba(119, 141, 169, 0.08);
+  stroke-width: 0.5;
+  stroke-dasharray: 3, 6;
+  transition: stroke 0.3s ease;
+}
+
+.transect-svg:hover .grid-line {
+  stroke: rgba(119, 141, 169, 0.12);
+}
+
+/* Transect Backgrounds - Glassmorphic Zones */
+.transect-svg .transect-bg {
+  fill: rgba(27, 38, 59, 0.25);
+  stroke: rgba(6, 255, 165, 0.2);
+  stroke-width: 2;
+  rx: 6;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.2));
+}
+
+.transect-svg .transect-bg:hover {
+  fill: rgba(27, 38, 59, 0.4);
+  stroke: rgba(6, 255, 165, 0.4);
+  filter: drop-shadow(0 4px 16px rgba(6, 255, 165, 0.15));
+}
+
+/* Transect Labels - Bold & Clear */
+.transect-svg .transect-label {
+  font-family: 'Inter', -apple-system, sans-serif;
+  font-size: 0.9rem;
+  font-weight: 800;
+  fill: #e9ecef;
+  text-anchor: middle;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.5));
+  transition: all 0.3s ease;
+}
+
+/* Axes - Clean & Minimal */
+.transect-svg .axis {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.75rem;
+}
+
+.transect-svg .axis path,
+.transect-svg .axis line {
+  stroke: rgba(119, 141, 169, 0.25);
+  stroke-width: 1.5;
+  shape-rendering: crispEdges;
+}
+
+.transect-svg .axis text {
+  fill: #adb5bd;
+  font-weight: 500;
+  font-size: 0.7rem;
+}
+
+.transect-svg .axis-label {
+  font-family: 'Inter', sans-serif;
+  font-size: 0.75rem;
+  fill: #e9ecef;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  text-anchor: middle;
+  opacity: 0.85;
+}
+
+/* ==========================================
+   COLONY MARKERS - Premium Interactive Dots
+   ========================================== */
+
+.transect-svg .colony {
+  cursor: pointer;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.5));
+}
+
+.transect-svg .colony:hover {
+  filter:
+    drop-shadow(0 6px 20px rgba(0, 0, 0, 0.7))
+    drop-shadow(0 0 15px currentColor)
+    brightness(1.15);
+  transform: scale(1.15);
+  z-index: 10;
+}
+
+.transect-svg .colony.selected {
+  stroke: #06ffa5 !important;
+  stroke-width: 3.5 !important;
+  filter:
+    drop-shadow(0 0 25px rgba(6, 255, 165, 0.8))
+    drop-shadow(0 6px 20px rgba(0, 0, 0, 0.7))
+    brightness(1.2);
+  animation: pulse-selected 2s ease-in-out infinite;
+  z-index: 20;
+}
+
+@keyframes pulse-selected {
+  0%, 100% {
+    filter:
+      drop-shadow(0 0 25px rgba(6, 255, 165, 0.8))
+      drop-shadow(0 6px 20px rgba(0, 0, 0, 0.7))
+      brightness(1.2);
+  }
+  50% {
+    filter:
+      drop-shadow(0 0 35px rgba(6, 255, 165, 1))
+      drop-shadow(0 8px 24px rgba(0, 0, 0, 0.8))
+      brightness(1.3);
+  }
+}
+
+/* ==========================================
+   MAP LEGEND - Elegant Key
+   ========================================== */
+
+.map-legend {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 2rem;
+  margin-top: 1.25rem;
+  padding: 1rem 1.5rem;
+  background: linear-gradient(135deg, rgba(13, 27, 42, 0.7), rgba(27, 38, 59, 0.5));
+  backdrop-filter: blur(12px);
+  border-radius: 1rem;
+  border: 1px solid rgba(119, 141, 169, 0.15);
+  box-shadow:
+    0 4px 16px rgba(0, 0, 0, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  flex-wrap: wrap;
+  transition: all 0.4s ease;
+}
+
+.map-legend:hover {
+  border-color: rgba(6, 255, 165, 0.25);
+  box-shadow:
+    0 8px 24px rgba(0, 0, 0, 0.3),
+    0 0 30px rgba(6, 255, 165, 0.08);
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  cursor: default;
+  padding: 0.375rem 0.75rem;
+  border-radius: 0.5rem;
+  position: relative;
+}
+
+.legend-item::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: 0.5rem;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.legend-item:hover::before {
+  opacity: 1;
+}
+
+.legend-item:hover {
+  transform: translateY(-3px) scale(1.05);
+}
+
+.legend-color {
+  width: 1rem;
+  height: 1rem;
+  border-radius: 50%;
+  box-shadow:
+    0 0 12px currentColor,
+    0 2px 6px rgba(0, 0, 0, 0.4);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+}
+
+.legend-color::after {
+  content: '';
+  position: absolute;
+  inset: -4px;
+  border-radius: 50%;
+  border: 2px solid currentColor;
+  opacity: 0;
+  transition: all 0.3s ease;
+}
+
+.legend-item:hover .legend-color {
+  box-shadow:
+    0 0 20px currentColor,
+    0 0 30px currentColor,
+    0 4px 10px rgba(0, 0, 0, 0.5);
+  transform: scale(1.3);
+}
+
+.legend-item:hover .legend-color::after {
+  opacity: 0.4;
+  inset: -8px;
+}
+
+.legend-label {
+  font-family: 'Inter', sans-serif;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: #e9ecef;
+  letter-spacing: 0.02em;
+  transition: all 0.3s ease;
+}
+
+.legend-item:hover .legend-label {
+  color: #ffffff;
+  text-shadow: 0 0 8px rgba(255, 255, 255, 0.3);
+}
+
+/* ==========================================
+   TOOLTIP - Premium Glassmorphic Overlay
+   ========================================== */
+
+.colony-tooltip {
+  position: fixed;
+  bottom: 9rem;
+  left: 50%;
+  transform: translateX(-50%);
+  background: linear-gradient(135deg, rgba(13, 27, 42, 0.98), rgba(27, 38, 59, 0.95));
+  backdrop-filter: blur(20px) saturate(180%);
+  border: 1px solid rgba(6, 255, 165, 0.35);
+  border-radius: 1rem;
+  padding: 1.25rem 1.5rem;
+  min-width: 18rem;
+  box-shadow:
+    0 20px 60px rgba(0, 0, 0, 0.6),
+    0 0 40px rgba(6, 255, 165, 0.25),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.2);
+  z-index: 1000;
+  pointer-events: none;
+  animation: tooltipSlideUp 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes tooltipSlideUp {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+}
+
+.colony-tooltip::before {
+  content: '';
+  position: absolute;
+  bottom: -8px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 0;
+  height: 0;
+  border-left: 8px solid transparent;
+  border-right: 8px solid transparent;
+  border-top: 8px solid rgba(6, 255, 165, 0.35);
+}
+
+.colony-tooltip::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(6, 255, 165, 0.05), transparent);
+  border-radius: 1rem;
+  pointer-events: none;
+}
+
+.tooltip-header {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #06ffa5;
+  margin-bottom: 1rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid rgba(6, 255, 165, 0.25);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  position: relative;
+  text-shadow: 0 0 10px rgba(6, 255, 165, 0.5);
+}
+
+.tooltip-header::after {
+  content: '';
+  position: absolute;
+  bottom: -1px;
+  left: 0;
+  height: 1px;
+  width: 40%;
+  background: linear-gradient(90deg, #06ffa5, transparent);
+  box-shadow: 0 0 8px rgba(6, 255, 165, 0.6);
+}
+
+.tooltip-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.5rem 0;
+  font-size: 0.8125rem;
+  position: relative;
+  transition: all 0.2s ease;
+}
+
+.tooltip-row::before {
+  content: '';
+  position: absolute;
+  left: -0.75rem;
+  width: 3px;
+  height: 0;
+  background: linear-gradient(180deg, #06ffa5, #0496ff);
+  border-radius: 2px;
+  opacity: 0;
+  transition: all 0.3s ease;
+}
+
+.tooltip-row:hover::before {
+  height: 100%;
+  opacity: 1;
+}
+
+.tooltip-row span:first-child {
+  color: #adb5bd;
+  font-weight: 600;
+  text-transform: uppercase;
+  font-size: 0.7rem;
+  letter-spacing: 0.05em;
+}
+
+.tooltip-row span:last-child {
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 700;
+  color: #f8f9fa;
+  font-size: 0.875rem;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+/* ==========================================
+   RESPONSIVE DESIGN
+   ========================================== */
+
+@media (max-width: 1400px) {
+  .transect-svg {
+    min-height: 450px;
+  }
+
+  .map-stats {
+    gap: 0.75rem;
+  }
+
+  .stat {
+    padding: 0.5rem 0.875rem;
+    font-size: 0.8125rem;
+  }
+
+  .stat-value {
+    font-size: 1.125rem;
+  }
+}
+
+@media (max-width: 1200px) {
+  .map-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+
+  .map-stats {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .transect-svg {
+    min-height: 400px;
+  }
+
+  .map-legend {
+    gap: 1.25rem;
+    padding: 0.875rem 1.25rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .colony-tooltip {
+    bottom: 1.5rem;
+    left: 1rem;
+    right: 1rem;
+    transform: none;
+    min-width: auto;
+  }
+
+  .colony-tooltip::before {
+    display: none;
+  }
+
+  .transect-svg {
+    min-height: 350px;
+  }
+
+  .map-legend {
+    gap: 1rem;
+    font-size: 0.75rem;
+  }
+
+  .legend-color {
+    width: 0.875rem;
+    height: 0.875rem;
+  }
+
+  .card-title {
+    font-size: 1.125rem;
+  }
+}
+
+/* ==========================================
+   PERFORMANCE OPTIMIZATIONS
+   ========================================== */
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Force GPU acceleration for smooth animations */
+.colony,
+.colony-tooltip,
+.legend-item,
+.stat {
+  will-change: transform;
+  transform: translateZ(0);
+  backface-visibility: hidden;
+  -webkit-font-smoothing: antialiased;
+}

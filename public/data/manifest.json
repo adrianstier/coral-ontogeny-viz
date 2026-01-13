@@ -1,0 +1,48 @@
+{
+  "generated": "2026-01-12 20:55:16 PST",
+  "version": "1.0.0",
+  "dataset": "MCR LTER Back Reef Transects 1-2 (2013-2024)",
+  "files": {
+    "summary_statistics": {
+      "filename": "summary_statistics.json",
+      "description": "Overall dataset statistics and population summaries",
+      "format": "JSON"
+    },
+    "timeseries": {
+      "filename": "timeseries.csv",
+      "description": "Population time series by year, genus, and transect",
+      "format": "CSV"
+    },
+    "spatial": {
+      "filename": "spatial_YYYY.json",
+      "description": "Spatial colony positions for each year (one file per year)",
+      "format": "JSON",
+      "count": 11
+    },
+    "demographic_events": {
+      "filename": "demographic_events.json",
+      "description": "Recruitment and mortality events by year",
+      "format": "JSON"
+    },
+    "size_frequency": {
+      "filename": "size_frequency.json",
+      "description": "Size-frequency distributions by year and genus",
+      "format": "JSON"
+    },
+    "color_schemes": {
+      "filename": "color_schemes.json",
+      "description": "Color mappings for genera and fates",
+      "format": "JSON"
+    },
+    "data_dictionary": {
+      "filename": "data_dictionary.json",
+      "description": "Variable definitions and metadata",
+      "format": "JSON"
+    }
+  },
+  "usage": {
+    "load_all": "Fetch all files on initialization for complete dataset",
+    "lazy_load": "Fetch spatial data per-year as needed for better performance",
+    "recommended": "Load summary + timeseries on init, fetch spatial on demand"
+  }
+}

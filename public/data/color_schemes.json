@@ -1,0 +1,16 @@
+{
+  "genus": {
+    "Pocillopora": "#E41A1C",
+    "Porites": "#377EB8",
+    "Acropora": "#4DAF4A",
+    "Millepora": "#984EA3"
+  },
+  "fate": {
+    "Growth": "#4DAF4A",
+    "Shrinkage": "#FF7F00",
+    "Death": "#E41A1C",
+    "Recruitment": "#984EA3",
+    "Fission": "#377EB8",
+    "Fusion": "#A65628"
+  }
+}

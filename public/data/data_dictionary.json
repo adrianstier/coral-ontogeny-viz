@@ -1,0 +1,31 @@
+{
+  "variables": {
+    "coral_id": "Unique colony identifier",
+    "year": "Survey year (2013-2024)",
+    "genus": "Coral genus (Pocillopora, Porites, Acropora, Millepora)",
+    "transect": "Transect ID (T01, T02)",
+    "x": "Cross-transect position (m, 0-1)",
+    "y": "Along-transect position (m, 0-5)",
+    "z": "Vertical position (m)",
+    "diam1": "Maximum diameter (cm)",
+    "diam2": "Perpendicular diameter (cm)",
+    "height": "Colony height (cm)",
+    "geom_mean_diam": "Geometric mean diameter: sqrt(diam1 × diam2)",
+    "volume_proxy": "Volume approximation: (diam1 × diam2 × height) / 6",
+    "status": "Colony status code",
+    "fate": "Demographic event",
+    "growth_rate_diam": "Log growth rate",
+    "is_recruit": "Appeared after 2013 baseline",
+    "died": "Colony died during study"
+  },
+  "missing_codes": {
+    "Na": "Not applicable (colony not present)",
+    "UK": "Unknown or not recorded",
+    "D": "Dead"
+  },
+  "units": {
+    "spatial": "meters",
+    "size": "centimeters",
+    "volume": "cubic centimeters"
+  }
+}

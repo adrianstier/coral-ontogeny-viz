@@ -1,8 +1,11 @@
 /**
  * Hook for loading and parsing coral data from Excel file
+ * NOTE: This hook is deprecated - we now use useCoralDataJSON instead
+ * Kept for reference only
  */
 
 import { useEffect } from 'react';
+// @ts-ignore - xlsx not installed, using JSON data instead
 import * as XLSX from 'xlsx';
 import { useStore } from '../store/useStore';
 import { parseCoralData } from '../utils/dataTransform';

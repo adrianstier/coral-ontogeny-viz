@@ -1,3 +1,114 @@
+# ============================================================================
+# DATA FILES
+# ============================================================================
+# Raw data (large Excel files - use Git LFS or exclude)
+data/raw/*.xlsx
+data/raw/*.csv
+data/raw/*.xls
+
+# Processed data (regenerated from scripts)
+data/processed/*.csv
+data/processed/*.parquet
+data/processed/*.rds
+data/processed/*.feather
+
+# External data (document what's needed in README)
+data/external/*
+!data/external/.gitkeep
+
+# ============================================================================
+# R
+# ============================================================================
+# R history and workspace
+.Rhistory
+.RData
+.Rapp.history
+
+# Session Data files
+.RDataTmp
+
+# User-specific files
+.Ruserdata
+
+# R Environment Variables
+.Renviron
+
+# R project files
+*.Rproj
+.Rproj.user/
+
+# renv library (managed by renv.lock)
+renv/library/
+renv/local/
+renv/cellar/
+renv/lock/
+renv/python/
+renv/sandbox/
+renv/staging/
+
+# Keep renv activation script
+!renv/activate.R
+!renv/settings.dcf
+!renv.lock
+
+# knitr cache
+*_cache/
+/cache/
+
+# Temporary files created by R markdown
+*.utf8.md
+*.knit.md
+
+# R package build files
+*.tar.gz
+*.tgz
+
+# Translation temp files
+po/*~
+
+# ============================================================================
+# OUTPUTS (regenerated from analysis)
+# ============================================================================
+outputs/figures/*
+!outputs/figures/.gitkeep
+
+outputs/reports/*
+!outputs/reports/.gitkeep
+
+outputs/exports/*
+!outputs/exports/.gitkeep
+
+# Notebook HTML outputs
+notebooks/*.html
+notebooks/*_files/
+
+# ============================================================================
+# PYTHON (if future Python analysis is added)
+# ============================================================================
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environments
+venv/
+env/
+.venv/
+ENV/
+.python-version
+
+# Jupyter Notebook
+.ipynb_checkpoints/
+*.ipynb_checkpoints
+
+# pytest
+.pytest_cache/
+.coverage
+htmlcov/
+
+# ============================================================================
+# NODE.JS / WEB APP
+# ============================================================================
 # Logs
 logs
 *.log
@@ -12,17 +123,6 @@ node_modules
 dist
 dist-ssr
 *.local
-
-# Editor directories and files
-.vscode/*
-!.vscode/extensions.json
-.idea
-.DS_Store
-*.suo
-*.ntvs*
-*.njsproj
-*.sln
-*.sw?
 
 # Build outputs
 build
@@ -47,6 +147,59 @@ coverage
 *.temp
 .cache
 
-# OS files
-Thumbs.db
+# ============================================================================
+# EDITOR & IDE
+# ============================================================================
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# ============================================================================
+# OPERATING SYSTEM
+# ============================================================================
+# macOS
 .DS_Store
+.AppleDouble
+.LSOverride
+Icon
+._*
+.DocumentRevisions-V100
+.fseventsd
+.Spotlight-V100
+.TemporaryItems
+.Trashes
+.VolumeIcon.icns
+.com.apple.timemachine.donotpresent
+
+# Windows
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+ehthumbs_vista.db
+*.stackdump
+[Dd]esktop.ini
+$RECYCLE.BIN/
+*.cab
+*.msi
+*.msix
+*.msm
+*.msp
+*.lnk
+
+# Linux
+*~
+.directory
+.Trash-*
+
+# ============================================================================
+# KEEP DIRECTORY STRUCTURE
+# ============================================================================
+# Keep .gitkeep files to preserve empty directories
+!.gitkeep
+!**/.gitkeep

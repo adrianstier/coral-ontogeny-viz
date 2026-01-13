@@ -1,0 +1,38 @@
+{
+  "dataset_name": "LTER 1 Back Reef Transects 1-2",
+  "source": "MCR LTER Back Reef Coral Monitoring Program",
+  "site": "Moorea, French Polynesia",
+  "habitat": "Back reef, 1-2m depth",
+  "collection_period": {
+    "start_year": 2013,
+    "end_year": 2024,
+    "frequency": "Annual surveys"
+  },
+  "spatial_coverage": {
+    "transects": ["T01", "T02"],
+    "transect_dimensions": "1m x 5m permanent plots",
+    "total_area_m2": 10
+  },
+  "sampling_design": {
+    "method": "Tagged colony monitoring",
+    "total_colonies": 387,
+    "genera_monitored": ["Pocillopora", "Porites", "Acropora", "Millepora"],
+    "measurements": ["Diameter 1", "Diameter 2", "Height", "Spatial position (X,Y,Z)"]
+  },
+  "data_structure": {
+    "format": "Wide-format Excel spreadsheet",
+    "metadata_columns": 8,
+    "year_blocks": 11,
+    "columns_per_year": 8,
+    "total_columns": 96
+  },
+  "principal_investigator": "MCR LTER Team",
+  "last_updated": "2024-01-12",
+  "schema_version": "1.0",
+  "notes": "Individual coral colonies tracked through time with demographic events (recruitment, growth, mortality, fission, fusion)",
+  "missing_data_codes": {
+    "Na": "Not applicable (colony not present)",
+    "UK": "Unknown/not recorded",
+    "D": "Dead"
+  }
+}

@@ -1,0 +1,200 @@
+{
+  "dataset": {
+    "name": "MCR LTER Back Reef Transects 1-2",
+    "years": [2013, 2023],
+    "n_colonies": 387,
+    "n_observations": 4257,
+    "transects": ["T01", "T02"],
+    "genera": ["Acr", "Mil", "Poc", "Por"]
+  },
+  "population": [
+    {
+      "year": 2013,
+      "live_colonies": 261
+    },
+    {
+      "year": 2014,
+      "live_colonies": 189
+    },
+    {
+      "year": 2015,
+      "live_colonies": 162
+    },
+    {
+      "year": 2016,
+      "live_colonies": 134
+    },
+    {
+      "year": 2017,
+      "live_colonies": 162
+    },
+    {
+      "year": 2019,
+      "live_colonies": 137
+    },
+    {
+      "year": 2020,
+      "live_colonies": 103
+    },
+    {
+      "year": 2021,
+      "live_colonies": 88
+    },
+    {
+      "year": 2022,
+      "live_colonies": 97
+    }
+  ],
+  "population_by_genus": {
+    "Acr": [
+      {
+        "year": 2013,
+        "count": 10
+      },
+      {
+        "year": 2014,
+        "count": 4
+      },
+      {
+        "year": 2015,
+        "count": 4
+      },
+      {
+        "year": 2016,
+        "count": 3
+      },
+      {
+        "year": 2017,
+        "count": 5
+      },
+      {
+        "year": 2019,
+        "count": 5
+      },
+      {
+        "year": 2020,
+        "count": 2
+      },
+      {
+        "year": 2021,
+        "count": 3
+      },
+      {
+        "year": 2022,
+        "count": 2
+      }
+    ],
+    "Mil": [
+      {
+        "year": 2022,
+        "count": 2
+      }
+    ],
+    "Poc": [
+      {
+        "year": 2013,
+        "count": 34
+      },
+      {
+        "year": 2014,
+        "count": 22
+      },
+      {
+        "year": 2015,
+        "count": 27
+      },
+      {
+        "year": 2016,
+        "count": 20
+      },
+      {
+        "year": 2017,
+        "count": 26
+      },
+      {
+        "year": 2019,
+        "count": 19
+      },
+      {
+        "year": 2020,
+        "count": 12
+      },
+      {
+        "year": 2021,
+        "count": 11
+      },
+      {
+        "year": 2022,
+        "count": 22
+      }
+    ],
+    "Por": [
+      {
+        "year": 2013,
+        "count": 217
+      },
+      {
+        "year": 2014,
+        "count": 163
+      },
+      {
+        "year": 2015,
+        "count": 131
+      },
+      {
+        "year": 2016,
+        "count": 111
+      },
+      {
+        "year": 2017,
+        "count": 131
+      },
+      {
+        "year": 2019,
+        "count": 113
+      },
+      {
+        "year": 2020,
+        "count": 89
+      },
+      {
+        "year": 2021,
+        "count": 74
+      },
+      {
+        "year": 2022,
+        "count": 71
+      }
+    ]
+  },
+  "size_distribution": {
+    "Acr": {
+      "mean": 4.8715,
+      "median": 4.899,
+      "sd": 2.8805,
+      "min": 0.8124,
+      "max": 12.0797
+    },
+    "Mil": {
+      "mean": 2.9726,
+      "median": 2.9726,
+      "sd": 2.5607,
+      "min": 1.1619,
+      "max": 4.7833
+    },
+    "Poc": {
+      "mean": 5.2341,
+      "median": 2.9111,
+      "sd": 5.4995,
+      "min": 0.5477,
+      "max": 25.7692
+    },
+    "Por": {
+      "mean": 5.6848,
+      "median": 4,
+      "sd": 5.3883,
+      "min": 0.4899,
+      "max": 34.2053
+    }
+  }
+}

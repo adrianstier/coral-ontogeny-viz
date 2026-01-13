@@ -2,12 +2,11 @@
  * Hook for managing year animation
  */
 
-import { useEffect, useRef } from 'react';
+import { useEffect } from 'react';
 import { useStore } from '../store/useStore';
 
 export function useAnimation() {
-  const { filters, ui, setCurrentYear, updateUI } = useStore();
-  const { currentYear } = filters;
+  const { ui } = useStore();
   const { playAnimation, animationSpeed } = ui;
 
   useEffect(() => {
@@ -31,7 +30,7 @@ export function useAnimation() {
     }, 1000 / useStore.getState().ui.animationSpeed);
 
     return () => clearInterval(interval);
-  }, []);
+  }, [playAnimation, animationSpeed]);
 
   return null;
 }
