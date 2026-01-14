@@ -306,6 +306,55 @@
 }
 
 /* ==========================================
+   BIOLOGICAL FATE STYLING
+   Colonization (Birth) vs Survival (Stable) vs Death
+   ========================================== */
+
+/* Recruit colonies - new births with bioluminescent pulse */
+.transect-svg .colony.recruit-birth {
+  animation: recruit-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  stroke-width: 3 !important;
+  z-index: 15;
+}
+
+@keyframes recruit-pulse {
+  0%, 100% {
+    filter:
+      drop-shadow(0 0 8px rgba(6, 255, 165, 0.8))
+      drop-shadow(0 0 4px rgba(6, 255, 165, 0.6))
+      drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3))
+      brightness(1.1);
+    opacity: 0.95;
+  }
+  50% {
+    filter:
+      drop-shadow(0 0 16px rgba(6, 255, 165, 1))
+      drop-shadow(0 0 8px rgba(6, 255, 165, 0.8))
+      drop-shadow(0 4px 8px rgba(0, 0, 0, 0.4))
+      brightness(1.25);
+    opacity: 1;
+  }
+}
+
+/* Death events - colonies that died this year (shown as ghosts in previous year) */
+.transect-svg .colony.recent-death {
+  opacity: 0.3 !important;
+  filter: drop-shadow(0 0 6px rgba(239, 71, 111, 0.5));
+  animation: death-fade 3s ease-out;
+}
+
+@keyframes death-fade {
+  0% {
+    opacity: 0.8;
+    filter: drop-shadow(0 0 10px rgba(239, 71, 111, 0.8));
+  }
+  100% {
+    opacity: 0.3;
+    filter: drop-shadow(0 0 6px rgba(239, 71, 111, 0.5));
+  }
+}
+
+/* ==========================================
    MAP LEGEND - Elegant Key
    ========================================== */
 

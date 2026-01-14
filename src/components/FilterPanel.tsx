@@ -5,11 +5,13 @@
 
 import { useStore } from '../store/useStore';
 import { GENUS_COLORS } from '../utils/colors';
-import { Genus } from '../types/coral';
+import { Genus, Transect } from '../types/coral';
 
 export function FilterPanel() {
   const { filters, toggleGenus, updateFilters } = useStore();
   const { selectedGenera, selectedTransects, yearRange, minSize, maxSize } = filters;
+
+  const [minYear, maxYear] = yearRange;
 
   const genera: Genus[] = ['Poc', 'Por', 'Acr', 'Mil'];
   const genusNames = {
@@ -108,15 +110,15 @@ export function FilterPanel() {
           Transects
         </label>
         <div className="grid grid-cols-2 gap-3">
-          {['T01', 'T02'].map((transect) => {
-            const isSelected = selectedTransects.includes(transect as any);
+          {(['T01', 'T02'] as Transect[]).map((transect) => {
+            const isSelected = selectedTransects.includes(transect);
             return (
               <button
                 key={transect}
                 onClick={() => {
                   const newTransects = isSelected
                     ? selectedTransects.filter((t) => t !== transect)
-                    : [...selectedTransects, transect as any];
+                    : [...selectedTransects, transect];
                   updateFilters({ selectedTransects: newTransects });
                 }}
                 aria-label={`${isSelected ? 'Deselect' : 'Select'} transect ${transect}`}
@@ -149,8 +151,8 @@ export function FilterPanel() {
           </div>
           <input
             type="range"
-            min="2013"
-            max="2023"
+            min={minYear}
+            max={maxYear}
             value={yearRange[0]}
             onChange={(e) =>
               updateFilters({ yearRange: [parseInt(e.target.value), yearRange[1]] })
@@ -163,8 +165,8 @@ export function FilterPanel() {
           </div>
           <input
             type="range"
-            min="2013"
-            max="2023"
+            min={minYear}
+            max={maxYear}
             value={yearRange[1]}
             onChange={(e) =>
               updateFilters({ yearRange: [yearRange[0], parseInt(e.target.value)] })
@@ -215,7 +217,7 @@ export function FilterPanel() {
           updateFilters({
             selectedGenera: ['Poc', 'Por', 'Acr', 'Mil'],
             selectedTransects: ['T01', 'T02'],
-            yearRange: [2013, 2023],
+            yearRange: [minYear, maxYear],
             minSize: 0,
             maxSize: 10000,
           });

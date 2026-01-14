@@ -3,14 +3,34 @@
  * Cinematic controls for temporal navigation
  */
 
+import { useRef, useEffect, useMemo } from 'react';
 import { useStore } from '../store/useStore';
+import { getYearArray } from '../utils/dataUtils';
 
 export function YearSlider() {
   const { filters, ui, setCurrentYear, toggleAnimation, updateUI } = useStore();
-  const { currentYear } = filters;
+  const { currentYear, yearRange } = filters;
   const { playAnimation, animationSpeed } = ui;
+  const sliderRef = useRef<HTMLInputElement>(null);
+  const isUpdatingRef = useRef(false);
 
-  const years = Array.from({ length: 11 }, (_, i) => 2013 + i);
+  const [minYear, maxYear] = yearRange;
+  const years = useMemo(() => getYearArray(minYear, maxYear), [minYear, maxYear]);
+
+  // Force update slider value when currentYear changes (fixes animation sync issue)
+  useEffect(() => {
+    if (sliderRef.current && sliderRef.current.value !== String(currentYear)) {
+      isUpdatingRef.current = true;
+      sliderRef.current.value = String(currentYear);
+      isUpdatingRef.current = false;
+    }
+  }, [currentYear]);
+
+  const handleSliderChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!isUpdatingRef.current) {
+      setCurrentYear(parseInt(e.target.value));
+    }
+  };
 
   return (
     <div className="flex items-center gap-6">
@@ -66,17 +86,18 @@ export function YearSlider() {
         {/* Slider Track */}
         <div className="relative">
           <input
+            ref={sliderRef}
             type="range"
-            min="2013"
-            max="2023"
-            value={currentYear}
-            onChange={(e) => setCurrentYear(parseInt(e.target.value))}
+            min={minYear}
+            max={maxYear}
+            defaultValue={currentYear}
+            onChange={handleSliderChange}
             className="w-full h-3 bg-gray-800 rounded-full appearance-none cursor-pointer slider-modern"
             style={{
               background: `linear-gradient(to right,
                 var(--bio-cyan) 0%,
-                var(--bio-cyan) ${((currentYear - 2013) / 10) * 100}%,
-                rgb(31 41 55) ${((currentYear - 2013) / 10) * 100}%,
+                var(--bio-cyan) ${((currentYear - minYear) / (maxYear - minYear)) * 100}%,
+                rgb(31 41 55) ${((currentYear - minYear) / (maxYear - minYear)) * 100}%,
                 rgb(31 41 55) 100%)`,
             }}
           />
@@ -102,26 +123,54 @@ export function YearSlider() {
         </div>
       </div>
 
-      {/* Speed Control */}
-      <div className="flex-shrink-0 flex items-center gap-3">
-        <label className="text-sm text-gray-400 font-medium">Speed</label>
-        <select
-          value={animationSpeed}
-          onChange={(e) => updateUI({ animationSpeed: parseFloat(e.target.value) })}
-          className="px-4 py-2 bg-gray-800 text-white border border-gray-700 rounded-lg font-mono text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500/50 transition-all cursor-pointer"
-        >
-          <option value="0.5">0.5×</option>
-          <option value="1">1×</option>
-          <option value="2">2×</option>
-          <option value="4">4×</option>
-        </select>
+      {/* Speed Control Slider */}
+      <div className="flex-shrink-0 flex flex-col gap-2 min-w-[180px]">
+        <div className="flex items-center justify-between">
+          <label className="text-xs text-gray-400 font-semibold uppercase tracking-wide">Speed</label>
+          <span className="text-sm font-bold text-cyan-400 font-mono">{animationSpeed}×</span>
+        </div>
+        <div className="relative">
+          <input
+            type="range"
+            min="0.5"
+            max="4"
+            step="0.5"
+            value={animationSpeed}
+            onChange={(e) => updateUI({ animationSpeed: parseFloat(e.target.value) })}
+            className="w-full h-2 bg-gray-800 rounded-full appearance-none cursor-pointer speed-slider"
+            style={{
+              background: `linear-gradient(to right,
+                var(--bio-purple) 0%,
+                var(--bio-purple) ${((animationSpeed - 0.5) / 3.5) * 100}%,
+                rgb(31 41 55) ${((animationSpeed - 0.5) / 3.5) * 100}%,
+                rgb(31 41 55) 100%)`,
+            }}
+          />
+          {/* Speed markers */}
+          <div className="flex justify-between mt-1 px-1">
+            {[0.5, 1, 2, 4].map((speed) => (
+              <button
+                key={speed}
+                onClick={() => updateUI({ animationSpeed: speed })}
+                className={`text-xs font-mono transition-colors ${
+                  speed === animationSpeed
+                    ? 'text-purple-400 font-bold'
+                    : 'text-gray-600 hover:text-gray-400'
+                }`}
+                aria-label={`Set speed to ${speed}x`}
+              >
+                {speed}
+              </button>
+            ))}
+          </div>
+        </div>
       </div>
 
       {/* Quick Navigation Buttons */}
       <div className="flex-shrink-0 flex items-center gap-2">
         <button
-          onClick={() => setCurrentYear(Math.max(2013, currentYear - 1))}
-          disabled={currentYear === 2013}
+          onClick={() => setCurrentYear(Math.max(minYear, currentYear - 1))}
+          disabled={currentYear === minYear}
           className="p-2 rounded-lg bg-gray-800 text-gray-400 hover:bg-gray-700 hover:text-cyan-400 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
           title="Previous Year"
         >
@@ -134,8 +183,8 @@ export function YearSlider() {
           </svg>
         </button>
         <button
-          onClick={() => setCurrentYear(Math.min(2023, currentYear + 1))}
-          disabled={currentYear === 2023}
+          onClick={() => setCurrentYear(Math.min(maxYear, currentYear + 1))}
+          disabled={currentYear === maxYear}
           className="p-2 rounded-lg bg-gray-800 text-gray-400 hover:bg-gray-700 hover:text-cyan-400 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
           title="Next Year"
         >

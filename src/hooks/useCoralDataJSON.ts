@@ -47,7 +47,9 @@ export function useCoralDataJSON() {
       setError(null);
 
       try {
-        console.log('Loading coral data from coral_webapp.json...');
+        if (import.meta.env.MODE === 'development') {
+          console.log('Loading coral data from coral_webapp.json...');
+        }
 
         // Load the main webapp JSON file
         const response = await fetch('/data/coral_webapp.json');
@@ -56,7 +58,10 @@ export function useCoralDataJSON() {
         }
 
         const webAppData: WebAppData = await response.json();
-        console.log('Loaded webapp data:', webAppData.metadata);
+
+        if (import.meta.env.MODE === 'development') {
+          console.log('Loaded webapp data:', webAppData.metadata);
+        }
 
         // Group records by coral_id
         const coralMap = new Map<number, Coral>();
@@ -149,18 +154,20 @@ export function useCoralDataJSON() {
           return coral;
         });
 
-        console.log(`✅ Loaded ${corals.length} coral colonies with ${webAppData.records.length} total observations`);
+        if (import.meta.env.MODE === 'development') {
+          console.log(`✅ Loaded ${corals.length} coral colonies with ${webAppData.records.length} total observations`);
 
-        // Log some sample data for debugging
-        const sampleCoral = corals[0];
-        if (sampleCoral) {
-          console.log('Sample coral:', {
-            id: sampleCoral.id,
-            genus: sampleCoral.genus,
-            observations: sampleCoral.observations.length,
-            first_year: sampleCoral.observations[0]?.year,
-            last_year: sampleCoral.observations[sampleCoral.observations.length - 1]?.year,
-          });
+          // Log some sample data for debugging
+          const sampleCoral = corals[0];
+          if (sampleCoral) {
+            console.log('Sample coral:', {
+              id: sampleCoral.id,
+              genus: sampleCoral.genus,
+              observations: sampleCoral.observations.length,
+              first_year: sampleCoral.observations[0]?.year,
+              last_year: sampleCoral.observations[sampleCoral.observations.length - 1]?.year,
+            });
+          }
         }
 
         setCorals(corals);

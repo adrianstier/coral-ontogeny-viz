@@ -612,6 +612,122 @@ button:focus-visible {
 }
 
 /* ==========================================
+   RANGE SLIDERS - Year & Speed Controls
+   ========================================== */
+
+/* Year Slider */
+.slider-modern {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 12px;
+  border-radius: 6px;
+  outline: none;
+  transition: all 0.3s ease;
+}
+
+.slider-modern::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--bioluminescent) 0%, var(--bio-blue) 100%);
+  cursor: pointer;
+  border: 3px solid var(--ocean-deep);
+  box-shadow:
+    0 0 20px rgba(6, 255, 165, 0.6),
+    0 4px 12px rgba(0, 0, 0, 0.4);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.slider-modern::-webkit-slider-thumb:hover {
+  transform: scale(1.15);
+  box-shadow:
+    0 0 30px rgba(6, 255, 165, 0.8),
+    0 6px 16px rgba(0, 0, 0, 0.5);
+}
+
+.slider-modern::-webkit-slider-thumb:active {
+  transform: scale(1.05);
+}
+
+.slider-modern::-moz-range-thumb {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--bioluminescent) 0%, var(--bio-blue) 100%);
+  cursor: pointer;
+  border: 3px solid var(--ocean-deep);
+  box-shadow:
+    0 0 20px rgba(6, 255, 165, 0.6),
+    0 4px 12px rgba(0, 0, 0, 0.4);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.slider-modern::-moz-range-thumb:hover {
+  transform: scale(1.15);
+  box-shadow:
+    0 0 30px rgba(6, 255, 165, 0.8),
+    0 6px 16px rgba(0, 0, 0, 0.5);
+}
+
+/* Speed Slider - Purple Theme */
+.speed-slider {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 8px;
+  border-radius: 4px;
+  outline: none;
+  transition: all 0.3s ease;
+}
+
+.speed-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--bio-purple) 0%, var(--bio-pink) 100%);
+  cursor: pointer;
+  border: 2px solid var(--ocean-deep);
+  box-shadow:
+    0 0 15px rgba(147, 129, 255, 0.6),
+    0 3px 10px rgba(0, 0, 0, 0.4);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.speed-slider::-webkit-slider-thumb:hover {
+  transform: scale(1.2);
+  box-shadow:
+    0 0 25px rgba(147, 129, 255, 0.8),
+    0 5px 14px rgba(0, 0, 0, 0.5);
+}
+
+.speed-slider::-webkit-slider-thumb:active {
+  transform: scale(1.05);
+}
+
+.speed-slider::-moz-range-thumb {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--bio-purple) 0%, var(--bio-pink) 100%);
+  cursor: pointer;
+  border: 2px solid var(--ocean-deep);
+  box-shadow:
+    0 0 15px rgba(147, 129, 255, 0.6),
+    0 3px 10px rgba(0, 0, 0, 0.4);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.speed-slider::-moz-range-thumb:hover {
+  transform: scale(1.2);
+  box-shadow:
+    0 0 25px rgba(147, 129, 255, 0.8),
+    0 5px 14px rgba(0, 0, 0, 0.5);
+}
+
+/* ==========================================
    GPU ACCELERATION HINTS
    ========================================== */
 

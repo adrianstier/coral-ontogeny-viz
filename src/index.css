@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -59,14 +59,14 @@
 
   body {
     @apply text-gray-100;
-    font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+    font-family: 'Outfit', system-ui, sans-serif;
     background: linear-gradient(135deg, var(--ocean-depths) 0%, var(--ocean-dark) 50%, var(--ocean-mid) 100%);
     min-height: 100vh;
     overflow-x: hidden;
     position: relative;
   }
 
-  /* Triple-layer animated background effect */
+  /* Static background effect - removed animation for clarity */
   body::before {
     content: '';
     position: fixed;
@@ -75,23 +75,11 @@
     right: 0;
     bottom: 0;
     background:
-      radial-gradient(ellipse at 15% 25%, rgba(6, 255, 165, 0.09) 0%, transparent 50%),
-      radial-gradient(ellipse at 85% 75%, rgba(4, 150, 255, 0.07) 0%, transparent 50%),
-      radial-gradient(ellipse at 50% 50%, rgba(147, 129, 255, 0.04) 0%, transparent 60%);
+      radial-gradient(ellipse at 15% 25%, rgba(6, 255, 165, 0.04) 0%, transparent 50%),
+      radial-gradient(ellipse at 85% 75%, rgba(4, 150, 255, 0.03) 0%, transparent 50%);
     pointer-events: none;
     z-index: 0;
-    animation: breathe 20s ease-in-out infinite;
-  }
-
-  @keyframes breathe {
-    0%, 100% {
-      opacity: 0.5;
-      transform: scale(1) rotate(0deg);
-    }
-    50% {
-      opacity: 0.8;
-      transform: scale(1.05) rotate(0.5deg);
-    }
+    opacity: 0.6;
   }
 
   /* Subtle texture overlay for depth */
@@ -110,6 +98,7 @@
   }
 
   h1, h2, h3, h4, h5, h6 {
+    font-family: 'Outfit', sans-serif;
     font-weight: 700;
     letter-spacing: -0.02em;
   }
@@ -160,16 +149,10 @@
     transition: opacity 0.4s ease;
   }
 
+  /* Removed hover effects to reduce competing visual elements */
   .glass-card:hover {
-    border-color: rgba(6, 255, 165, 0.3);
-    box-shadow:
-      var(--shadow-depth),
-      0 0 40px rgba(6, 255, 165, 0.12);
-    transform: translateY(-6px);
-  }
-
-  .glass-card:hover::after {
-    opacity: 1;
+    border-color: rgba(119, 141, 169, 0.25);
+    transform: translateY(-2px);
   }
 
   .glass-panel {
@@ -188,7 +171,7 @@
     @apply px-6 py-3 rounded-xl font-bold text-sm transition-all duration-300;
     background: linear-gradient(135deg, var(--bio-cyan) 0%, var(--bio-blue) 100%);
     color: var(--ocean-depths);
-    box-shadow: var(--glow-cyan);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3); /* Removed glow, simple shadow */
     position: relative;
     overflow: hidden;
     font-family: 'JetBrains Mono', monospace;

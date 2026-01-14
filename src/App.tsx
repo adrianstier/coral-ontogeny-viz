@@ -3,15 +3,16 @@
  * Coral Ontogeny Visualization Dashboard
  */
 
+import { useState } from 'react';
 import { useCoralDataJSON } from './hooks/useCoralDataJSON';
 import { useAnimation } from './hooks/useAnimation';
 import { useStore } from './store/useStore';
 import { FilterPanel } from './components/FilterPanel';
-import { YearSlider } from './components/YearSlider';
 import TransectMap from './components/TransectMap';
 import './App.css';
 
 function App() {
+  const [statsExpanded, setStatsExpanded] = useState(false);
   // Load data from R-generated JSON files
   useCoralDataJSON();
 
@@ -123,53 +124,49 @@ function App() {
             <FilterPanel />
           </section>
 
-          {/* Summary Statistics */}
-          <section className="glass-card p-6">
-            <h2 className="text-lg font-bold text-gray-200 mb-6 flex items-center gap-3">
-              <div className="w-1 h-6 bg-gradient-to-b from-pink-400 to-purple-500 rounded"></div>
-              Summary Statistics
-            </h2>
-            <div className="space-y-4">
-              <StatItem
-                label="Total Colonies"
-                value={corals.length}
-                color="cyan"
-              />
-              <StatItem
-                label="Live Colonies"
-                value={liveColonies}
-                color="green"
-              />
-              <StatItem
-                label="Study Duration"
-                value="11 years"
-                color="blue"
-              />
-              <StatItem
-                label="Transects"
-                value="2"
-                color="purple"
-              />
-            </div>
-          </section>
+          {/* Statistics - Collapsible */}
+          <section className="glass-card">
+            <button
+              onClick={() => setStatsExpanded(!statsExpanded)}
+              className="w-full p-4 flex items-center justify-between text-left hover:bg-white/5 transition-colors rounded-t-xl"
+            >
+              <h2 className="text-base font-bold text-gray-200 flex items-center gap-2">
+                <div className="w-1 h-5 bg-gradient-to-b from-pink-400 to-purple-500 rounded"></div>
+                Statistics
+              </h2>
+              <svg
+                className={`w-5 h-5 text-gray-400 transition-transform ${statsExpanded ? 'rotate-180' : ''}`}
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
+            </button>
 
-          {/* Genus Distribution */}
-          <section className="glass-card p-6">
-            <h2 className="text-lg font-bold text-gray-200 mb-6 flex items-center gap-3">
-              <div className="w-1 h-6 bg-gradient-to-b from-orange-400 to-red-500 rounded"></div>
-              Genus Distribution
-            </h2>
-            <GenusStats corals={corals} currentYear={filters.currentYear} />
+            {statsExpanded && (
+              <div className="p-6 pt-0 space-y-6 animate-in fade-in slide-in-from-top-2 duration-200">
+                {/* Summary Statistics */}
+                <div className="space-y-3">
+                  <h3 className="text-sm font-semibold text-gray-400 uppercase tracking-wide">Summary</h3>
+                  <div className="space-y-3">
+                    <StatItem label="Total Colonies" value={corals.length} color="cyan" />
+                    <StatItem label="Live Colonies" value={liveColonies} color="green" />
+                    <StatItem label="Study Duration" value="11 years" color="blue" />
+                    <StatItem label="Transects" value="2" color="purple" />
+                  </div>
+                </div>
+
+                {/* Genus Distribution */}
+                <div className="space-y-3 border-t border-gray-700/50 pt-4">
+                  <h3 className="text-sm font-semibold text-gray-400 uppercase tracking-wide">Genus Distribution</h3>
+                  <GenusStats corals={corals} currentYear={filters.currentYear} />
+                </div>
+              </div>
+            )}
           </section>
         </aside>
       </main>
-
-      {/* Timeline Controls - Fixed Bottom */}
-      <footer className="glass-panel border-t border-gray-700/50 backdrop-blur-xl sticky bottom-0 z-40">
-        <div className="max-w-[1800px] mx-auto px-6 py-5">
-          <YearSlider />
-        </div>
-      </footer>
     </div>
   );
 }
@@ -204,7 +201,7 @@ function StatItem({
 }
 
 // Genus Stats Component
-function GenusStats({ corals, currentYear }: { corals: any[]; currentYear: number }) {
+function GenusStats({ corals, currentYear }: { corals: import('./types/coral').Coral[]; currentYear: number }) {
   const GENUS_COLORS: Record<string, string> = {
     Poc: '#E41A1C',
     Por: '#377EB8',
@@ -220,20 +217,20 @@ function GenusStats({ corals, currentYear }: { corals: any[]; currentYear: numbe
   };
 
   const genusCounts = corals.reduce((acc, coral) => {
-    const obs = coral.observations.find((o: any) => o.year === currentYear);
+    const obs = coral.observations.find((o) => o.year === currentYear);
     if (obs?.is_alive) {
       acc[coral.genus] = (acc[coral.genus] || 0) + 1;
     }
     return acc;
   }, {} as Record<string, number>);
 
-  const total = Object.values(genusCounts).reduce((sum, count) => (sum as number) + (count as number), 0);
+  const total = Object.values(genusCounts).reduce((sum, count) => sum + count, 0);
 
   return (
     <div className="space-y-3">
       {Object.entries(GENUS_NAMES).map(([code, name]) => {
         const count = genusCounts[code] || 0;
-        const percentage = (total as number) > 0 ? (count / (total as number)) * 100 : 0;
+        const percentage = total > 0 ? (count / total) * 100 : 0;
 
         return (
           <div key={code} className="space-y-2">

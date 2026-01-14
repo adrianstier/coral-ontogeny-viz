@@ -4,11 +4,13 @@
 
 import { Genus } from '../types/coral';
 
+// Increased saturation/brightness by 15-20% for better contrast on dark background
+// Distinct colors that don't overlap with blue-red size gradient
 export const GENUS_COLORS: Record<Genus, string> = {
-  Poc: '#E64B35', // Red-orange (Pocillopora)
-  Por: '#4DBBD5', // Cyan (Porites)
-  Acr: '#00A087', // Teal (Acropora)
-  Mil: '#8B4513', // Brown (Millepora)
+  Poc: '#FF5A45', // Bright red-orange (Pocillopora)
+  Por: '#5DD5F3', // Bright cyan (Porites)
+  Acr: '#FFD700', // Gold/yellow (Acropora) - distinct from gradient
+  Mil: '#B8621B', // Bright brown (Millepora)
 };
 
 export const FATE_COLORS: Record<string, string> = {
@@ -62,13 +64,15 @@ export function getGenusSymbol(genus: Genus): string {
 
 /**
  * Get color scale for size visualization
+ * Clean blue to red gradient without green/purple artifacts
  */
 export function getSizeColor(size: number, minSize: number, maxSize: number): string {
   const normalized = (size - minSize) / (maxSize - minSize);
 
-  // Blue (small) to Red (large)
+  // Pure blue (small) to pure red (large)
   const r = Math.round(normalized * 255);
+  const g = 0; // Keep green at 0 for clean gradient
   const b = Math.round((1 - normalized) * 255);
 
-  return `rgb(${r}, 100, ${b})`;
+  return `rgb(${r}, ${g}, ${b})`;
 }

@@ -8,7 +8,7 @@ import { AppState, FilterState, Genus, UIState, ViewState } from '../types/coral
 const initialFilters: FilterState = {
   selectedGenera: ['Poc', 'Por', 'Acr', 'Mil'],
   selectedTransects: ['T01', 'T02'],
-  yearRange: [2013, 2023],
+  yearRange: [2013, 2024],
   currentYear: 2013,
   minSize: 0,
   maxSize: 10000,
@@ -43,7 +43,29 @@ export const useStore = create<AppState>((set) => ({
   view: initialView,
 
   // Actions
-  setCorals: (corals) => set({ corals }),
+  setCorals: (corals) => {
+    // Compute year range from data
+    let minYear = 2013;
+    let maxYear = 2024;
+
+    if (corals.length > 0) {
+      corals.forEach((coral) => {
+        coral.observations.forEach((obs) => {
+          if (obs.year < minYear) minYear = obs.year;
+          if (obs.year > maxYear) maxYear = obs.year;
+        });
+      });
+    }
+
+    set((state) => ({
+      corals,
+      filters: {
+        ...state.filters,
+        yearRange: [minYear, maxYear],
+        currentYear: Math.max(minYear, state.filters.currentYear), // Keep current year if valid
+      },
+    }));
+  },
 
   setLoading: (isLoading) => set({ isLoading }),
 
