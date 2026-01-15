@@ -15,6 +15,13 @@ export function useAnimation() {
   useEffect(() => {
     if (!playAnimation) return;
 
+    // Calculate timing to make full cycle take 10 seconds
+    // Total years to traverse (e.g., 2013-2024 = 12 steps)
+    const totalYears = maxYear - minYear + 1;
+    const targetDuration = 10000; // 10 seconds in milliseconds
+    const baseInterval = targetDuration / totalYears; // ~833ms per year for 12 years
+
+    // Apply user's speed multiplier
     const interval = setInterval(() => {
       const nextYear = useStore.getState().filters.currentYear + 1;
 
@@ -24,7 +31,7 @@ export function useAnimation() {
       } else {
         setCurrentYear(nextYear);
       }
-    }, 1000 / animationSpeed);
+    }, baseInterval / animationSpeed);
 
     return () => clearInterval(interval);
   }, [playAnimation, animationSpeed, minYear, maxYear, setCurrentYear]);
